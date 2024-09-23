@@ -31,3 +31,5 @@ To Do:
   -Add Cooldown
   -Add Water Spells
   -Add Summoning Spells
+  -Add Wards/Auras
+  -Add Trap Spells
