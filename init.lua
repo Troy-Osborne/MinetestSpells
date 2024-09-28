@@ -9,7 +9,9 @@ TroMagic.mod = {author = "Troy Osborne" }
 TroMagic.modpath = minetest.get_modpath("devmagic")
 
 dofile(TroMagic.modpath.."./spellfire.lua")
---dofile(TroMagic.modpath.."/mana.lua")
+dofile(TroMagic.modpath.."./spellhud.lua")
+dofile(TroMagic.modpath.."/itempotions.lua")
+dofile(TroMagic.modpath.."/spellscrolls.lua")
 --dofile(TroMagic.modpath.."/spells.lua")
 
 
@@ -23,42 +25,29 @@ halfpi=math.pi*0.5
 --This will be chaged in future to write the player mana to the world so it can be loaded whenever they join
 minetest.register_on_joinplayer(function(player)
     if player then
-        --local myplayer = minetest.get_player_by_name("singleplayer") --Load the Player
+	 pmeta = player:get_meta()
+      
+      
+ if pmeta:get_int("Logins")==nil then -- if player is logging in for the first time
+    pmeta:set_int("Logins", 1) -- set logins to 1
+    local defaultmana=100
+    pmeta:set_int("MaxMana", defaultmana) --initalise maximum mana (can be altered by status effects)
+    pmeta:set_int("Mana", defaultmana) -- and current mana
+    
+  else -- if player has logged in before
+    --increase login count
+    
+    pmeta:set_int("Logins", pmeta:get_int("Logins")+1) 
+    end
 
-        local defaultmana=100
-
-        local pmeta = player:get_meta()
-
-        pmeta:set_int("Mana", defaultmana)
-        pmeta:set_int("MaxMana", defaultmana)
-
-
-        print(defaultmana)
-
-        --Draw Mana To Screen
---INI MANA DISPLAY
- ManaDisplay = player:hud_add({
-         --hud_elem_type = "text",
-         type = "text",
-         position      = {x = 0.1, y = 0.1},
-         offset        = {x = 0,   y = 0},
-         text          = "Mana:"..pmeta:get_string("Mana")..'/'..pmeta:get_string("MaxMana"),
-         alignment     = {x = 0, y = 0},  -- center aligned
-         scale         = {x = 100, y = 100}, -- covered later
-    })
-  
-
-  
-
-  end
+local MaxMana= pmeta:get_int("MaxMana")
+ local Mana=pmeta:get_int("Mana")
+ ManaDisplay = CreateManaBar(player,Mana,MaxMana)
+ LoginDisplay = DisplayLogins(player,pmeta:get_int("Logins"))
+ end
 end)
 
 
----REDRAWING MANA
-RefreshManaDisplay= function(player)
-local pmeta = player:get_meta()
-player:hud_change(ManaDisplay, "text", "Mana:"..pmeta:get_string("Mana")..'/'..pmeta:get_string("MaxMana"))  
-end
   
   
   
@@ -72,7 +61,7 @@ SpendMana= function(player,manacost)
   --Check if you have enough mana to spend
   if newmana>=0 then  --If you have enough mana Adust the Mana Refresh the display and return True for success
   pmeta:set_int("Mana", newmana)
-  RefreshManaDisplay(player)
+  RefreshManaDisplay(player,ManaDisplay)
   return true
 else --otherwise don't adjust the mana and return false signalling the mana could not be spent
   return false
@@ -92,12 +81,8 @@ GainMana= function(player,managain)
 else --otherwise don't adjust the mana and return false signalling the mana could not be spent
   pmeta:set_int("Mana", newmana)
 end
-RefreshManaDisplay(player)
+RefreshManaDisplay(player,ManaDisplay)
 end
-
-
-
-
 
 
 ---MISC FUNCTIONS
@@ -128,9 +113,9 @@ castspell=function(player,castpos,spellname,effectfunc,manacost,cooldown)
 end
 
 blocksinradius= function (origin,radius,nodefunc) --applies nodefunc to all blocks in a given radius
-  for xo=-radius,radius,1 do --xoffset
-  for yo=-radius,radius,1 do --yoffset
-for zo=-radius,radius,1 do --zoffset
+  for xo=-math.ceil(radius),math.ceil(radius),1 do --xoffset
+  for yo=-math.ceil(radius),math.ceil(radius),1 do --yoffset
+  for zo=-math.ceil(radius),math.ceil(radius),1 do --zoffset
   if math.sqrt(xo*xo+yo*yo+zo*zo)<=radius then
     nodefunc({x=xo+origin.x, y=origin.y+yo, z= origin.z+zo})
     end
@@ -183,7 +168,14 @@ function freezewater(pos)
   end
 end
 
-function burnair(pos)
+function evaporate_flammable(pos)
+    local currentnode=minetest.get_node(pos)
+    if minetest.get_item_group(currentnode.name, "flammable") >= 1 then
+    minetest.set_node(pos, { name = 'air' })
+  end
+end
+
+function burn_air(pos)
     local currentnode=minetest.get_node(pos)
     if currentnode.name=='air'       
   then
@@ -191,6 +183,13 @@ function burnair(pos)
   end
 end
 
+function removefire(pos)
+    local currentnode=minetest.get_node(pos)
+    if currentnode.name=='fire:basic_flame' or currentnode.name=='devmagic:spell_flame'      
+  then
+    minetest.set_node(pos, { name = 'air' })
+  end
+end
 
 function spell_treewall1(player,pos,angle)
   local manacost=2
@@ -199,7 +198,7 @@ function spell_treewall1(player,pos,angle)
 end
 
 function spell_treewall2(player,pos,angle)
-  local manacost=2
+  local manacost=5
   local cooldown=0
     castspell(player,pos,"TreeWall",function (caster,castpos) blocksinline(castpos,6,4,angle,growtree("default:acacia_tree")) end, manacost,cooldown)
 end
@@ -211,95 +210,67 @@ function spell_freeze(player,pos)
     castspell(player,pos,"Freeze",function (caster,castpos) blocksinradius(castpos,3,freezewater) end, manacost,cooldown)
 end
 
---function spell_ignite(player,pos)
---  local manacost=5
---  local cooldown=0
---    castspell(player,pos,"Ignite",function (caster,castpos) blocksinradius(castpos,3,burnair) end, manacost,cooldown)
---end
+function spell_heal(player)
+  local manacost=10
+  local cooldown=0
+    castspell(player,pos,"Heal",function (caster,castpos) caster:set_hp(caster:get_hp() + 5) end, manacost,cooldown)
+end
 
+function spell_waterbreathing(player)
+  local manacost=20
+  local duration=60
+  local cooldown=0
+    castspell(player,pos,"WaterBreathing",function (caster,castpos) statuseffect(caster,duration,"WaterBreathing") end, manacost,cooldown)
+end
 
-function spell_blast(player,pos)
+function spell_regen(player)
+  local manacost=20
+  local duration=30
+  local cooldown=0
+    castspell(player,pos,"Regen",function (caster,castpos) statuseffect(caster,duration,"Regen") end, manacost,cooldown)
+end
+
+function spell_extinguish(player,pos)
   local manacost=5
   local cooldown=0
-    castspell(player,pos,"Blast",function (caster,castpos) blocksinradius(castpos,3,burnair) end, manacost,cooldown)
+    castspell(player,pos,"Extinguish",function (caster,castpos) blocksinradius(castpos,6,removefire) end, manacost,cooldown)
+end
+
+function spell_ignite(player,pos)
+  local manacost=4
+  local cooldown=0
+    castspell(player,pos,"Ignite",function (caster,castpos) blocksinradius(castpos,1.7,burn_air) end, manacost,cooldown)
+end
+
+function spell_blast(player,pos)
+  local manacost=10
+  local cooldown=0
+    castspell(player,pos,"Blast",function (caster,castpos) 
+        blocksinradius(castpos,1.5,evaporate_flammable) 
+        blocksinradius(castpos,3,burn_air)
+        end, manacost,cooldown)
+end
+
+spell_table={
+  blast=spell_blast,
+  ignite=spell_ignite,
+  extinguish=spell_extinguish,
+  regen=spell_regen,
+  treewall=spell_treewall1,
+  treewall2=spell_treewall2,
+  freeze=spell_freeze,
+  heal=spell_heal,
+  }
+
+local merge = function(a, b)
+    local c = {}
+    for k,v in pairs(a) do c[k] = v end
+    for k,v in pairs(b) do c[k] = v end
+    return c
 end
 
 
-minetest.register_node("devmagic:scroll_of_freeze",{
-description= "Single use scroll casts level 1 Freeze",
-sunlight_propagates=true,
-use_texture_alpha=true,
-liquids_pointable = true,
-on_place = function(itemstack, placer, pointed_thing)
-  local pos = pointed_thing.above
-  local underpos =  pointed_thing.under
-  local topnode = minetest.get_node(pointed_thing.above).name
-  local bottomnode = minetest.get_node(pointed_thing.under).name
-  local name = placer:get_player_name()        
-        spell_freeze(placer,pos)
-        if  minetest.get_item_group(topnode, "water")>0 
-        then
-          minetest.set_node(pos, { name = "default:ice" })
-       else 
-        minetest.set_node(pos, { name = topnode })
-        end
-      end,
-      
-tiles = { 'scroll.png' },
-inventory_image = 'scroll.png',
-wield_image = 'scroll.png',
-	paramtype = 'light',
-	buildable_to = true,
-})
-
-
-
-minetest.register_node("devmagic:scroll_of_blast",{
-description= "Single use scroll casts level 2 Fire",
-sunlight_propagates=true,
-use_texture_alpha=true,
-liquids_pointable = true,
-on_place = function(itemstack, placer, pointed_thing)
-  local pos = pointed_thing.above
-  local underpos =  pointed_thing.under
-  local topnode = minetest.get_node(pointed_thing.above).name
-  local bottomnode = minetest.get_node(pointed_thing.under).name
-  local name = placer:get_player_name()        
-        spell_blast(placer,pos)
-        minetest.set_node(pos, { name = topnode })
-        end,
-      
-tiles = { 'scroll.png' },
-inventory_image = 'scroll.png',
-wield_image = 'scroll.png',
-	paramtype = 'light',
-	buildable_to = true,
-})
-
-
-minetest.register_node("devmagic:scroll_of_treewall",{
-description= "Single use scroll casts level 2 Tree Wall",
-sunlight_propagates=true,
-use_texture_alpha=true,
-liquids_pointable = true,
-on_place = function(itemstack, placer, pointed_thing)
-  local pos = pointed_thing.above
-  local underpos =  pointed_thing.under
-  local topnode = minetest.get_node(pointed_thing.above).name
-  local bottomnode = minetest.get_node(pointed_thing.under).name
-  local name = placer:get_player_name()        
-  local angle=placer:get_look_horizontal()
-        spell_treewall2(placer,pos,angle)
-        minetest.set_node(pos, { name = "default:acacia_tree" })
-        end,
-      
-tiles = { 'scroll.png' },
-inventory_image = 'scroll.png',
-wield_image = 'scroll.png',
-	paramtype = 'light',
-	buildable_to = true,
-})
-
+Register_Spell_Scrolls(spell_table,{merge=merge})
 
 ---FIRST SPELL EFFECT TYPE
 
@@ -317,3 +288,9 @@ wield_image = 'scroll.png',
 ----Make All flammables into Fire
 --Plantwall
 ----Make Dirt into Bamboo/Papyrus
+
+
+
+--potions
+Register_Mana_Potions({GainMana = GainMana});
+  
