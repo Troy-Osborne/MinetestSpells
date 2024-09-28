@@ -1,7 +1,8 @@
 A very early minetest spell library.
-Only a day old at this point. Mostly just an excercise to brush up on Lua and learn the minetest engine
+Mostly just an excercise to brush up on Lua and learn the minetest engine.
+Hopefully becomes a worthwhile mod eventually but still have many Minetest conventions to brush up on
 
-At the moment the mana is on persistant and spells are only called from scrolls.
+At the moment spells are only called from scrolls.
 
 Added Functions useful for implementing a variety of spells
 
