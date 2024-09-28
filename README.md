@@ -13,19 +13,26 @@ Completed Spell Effects:
     -Turns sand into default:silver_sand nodes
   
   **Blast (Spherical AOE):**
-    -Turns air into devmagic:spell_flame nodes
+    -Turns small radius of flammable nodes into air
+    -Turns slightly larger radius of air into devmagic:spell_flame nodes
     -Flames burn out in 1-2 seconds
     -Flames next to flamable tiles turn into 
   
   **Tree Wall:**
     -Creates a line of trees perpendicular to the player direction
 
+  **Heal**
+    -Heals 5HP
+
+  **Extinguish**
+    -Puts out all fire in a large radius
+
 To Do:
   -Make spells learnable
   -Make unrepairable staffs which cast spells without mana cosumption until they lose durability
   -Add Magic Level with the ability to learn or upgrade a spell each level
-  -Make Mana/Max Mana, Spells, and Magic Level persistent 
   -Add Inventory Image and Wield images.
+  -Add Effects (Water Breathing, Regen)
   -Add Casting Animations and Delays
   -Add Missle Animations
   -Add Cooldown
