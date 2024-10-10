@@ -1,3 +1,6 @@
+Check out this video for an up to date preview
+https://www.youtube.com/watch?v=lZGjk1NVsvQ
+
 A very early minetest spell library.
 Mostly just an excercise to brush up on Lua and learn the minetest engine.
 Hopefully becomes a worthwhile mod eventually but still have many Minetest conventions to brush up on
@@ -27,6 +30,14 @@ Completed Spell Effects:
 
   **Extinguish**
     -Puts out all fire in a large radius
+
+  **Stone Bridge**
+    -Temporary Bridge of Stone which decays into cobblestone then gravel before finally disappearing.
+
+  **Extinguish**
+    - Added 2 grenades which cast spells on detonation. (using LoneWolfHT's Grenade API)
+
+
 
 To Do:
   -Make spells learnable
