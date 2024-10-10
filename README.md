@@ -1,5 +1,6 @@
 Check out this video for an up to date preview
-https://www.youtube.com/watch?v=lZGjk1NVsvQ
+[![Magic Mod Video](https://img.youtube.com/vi/lZGjk1NVsvQ/0.jpg)](https://www.youtube.com/watch?v=lZGjk1NVsvQ)
+
 
 A very early minetest spell library.
 Mostly just an excercise to brush up on Lua and learn the minetest engine.
