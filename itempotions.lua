@@ -4,8 +4,8 @@
 function Register_Mana_Potions(TopLevel)
   minetest.register_craftitem("devmagic:light_mana_potion",{
 description= "Single use Mana Potion Restores 25MP",
-inventory_image = 'light_mana_potion.png',
-wield_image = 'light_mana_potion.png',
+inventory_image = 'devmagic_light_mana_potion.png',
+wield_image = 'devmagic_light_mana_potion.png',
 on_use = function(itemstack, user, pointed_thing) 
   local hpchange=0
   local replacement=nil
@@ -16,8 +16,8 @@ on_use = function(itemstack, user, pointed_thing)
 
 minetest.register_craftitem("devmagic:mana_potion",{
 description= "Single use Mana Potion Restores 75MP",
-inventory_image = 'mana_potion.png',
-wield_image = 'mana_potion.png',
+inventory_image = 'devmagic_mana_potion.png',
+wield_image = 'devmagic_mana_potion.png',
 on_use = function(itemstack, user, pointed_thing)
   
   local hpchange=0

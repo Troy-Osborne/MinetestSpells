@@ -1,7 +1,7 @@
-fire = {}
+spellfire = {}
 
 -- Load support for MT game translation.
-local S = minetest.get_translator("fire")
+local S = minetest.get_translator("spellfire")
 
 local spell_fire_node = {
 	drawtype = "firelike",
